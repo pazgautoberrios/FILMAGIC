@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "FILMAGIC",
+    "slug": "filmagic",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.filmagic.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FILMAGIC necesita acceso a la cámara para escanear códigos QR",
+        "NSLocationWhenInUseUsageDescription": "FILMAGIC registra la ubicación del escaneo para auditoría"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0F"
+      },
+      "package": "com.filmagic.app",
+      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION", "VIBRATE"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      "expo-secure-store",
+      ["expo-av", { "microphonePermission": false }]
+    ],
+    "scheme": "filmagic",
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

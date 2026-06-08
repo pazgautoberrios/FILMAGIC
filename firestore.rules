@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+
+    function isOrganizerOrAbove() {
+      return isSignedIn() && getUserRole() in ['admin', 'organizer'];
+    }
+
+    function canScan() {
+      return isSignedIn() && getUserRole() in ['admin', 'organizer', 'hostess'];
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /guests/{guestId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOrganizerOrAbove();
+      allow delete: if isAdmin();
+    }
+
+    match /qr_codes/{qrId} {
+      allow read: if isSignedIn();
+      allow create: if isOrganizerOrAbove();
+      allow update: if canScan();
+      allow delete: if isAdmin();
+    }
+  }
+}

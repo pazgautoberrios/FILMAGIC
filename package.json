@@ -16,7 +16,7 @@
     "@react-navigation/native": "^7.1.8",
     "@tanstack/react-query": "^5.0.0",
     "@types/papaparse": "^5.3.14",
-    "babel-preset-expo": "~56.0.14",
+    "babel-preset-expo": "~54.0.11",
     "date-fns": "^3.0.0",
     "expo": "~54.0.0",
     "expo-asset": "~12.0.0",

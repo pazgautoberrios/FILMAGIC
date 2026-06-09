@@ -38,6 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    'react-native-svg',
     'expo-camera',
     'expo-secure-store',
     ['expo-av', { microphonePermission: false }],

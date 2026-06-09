@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { addGuest } from '@/services/firebase/guests';
+import { generateQRCodesLocally } from '@/services/firebase/qr.local';
 import { useCurrentUser } from '@/hooks/useAuth';
 
 export default function AddGuestScreen() {
@@ -50,7 +51,7 @@ export default function AddGuestScreen() {
     }
     setLoading(true);
     try {
-      await addGuest({
+      const guestId = await addGuest({
         eventId,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -60,6 +61,7 @@ export default function AddGuestScreen() {
         status: 'pending',
         notes: notes.trim() || undefined,
       });
+      await generateQRCodesLocally(eventId, guestId, totalQRs);
       await queryClient.invalidateQueries({ queryKey: ['guests', eventId] });
       router.back();
     } catch (err: any) {

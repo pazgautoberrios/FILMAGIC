@@ -1,24 +1,27 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { getEvent, getEventMetrics } from '@/services/firebase/events';
 
 export default function DashboardScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const router = useRouter();
+  const id = Array.isArray(eventId) ? eventId[0] : eventId;
 
   const { data: event } = useQuery({
-    queryKey: ['event', eventId],
-    queryFn: () => getEvent(eventId),
-    enabled: !!eventId,
+    queryKey: ['event', id],
+    queryFn: () => getEvent(id),
+    enabled: !!id,
   });
 
   const { data: metrics, isLoading } = useQuery({
-    queryKey: ['metrics', eventId],
-    queryFn: () => getEventMetrics(eventId),
-    enabled: !!eventId,
+    queryKey: ['metrics', id],
+    queryFn: () => getEventMetrics(id),
+    enabled: !!id,
     refetchInterval: 15_000,
   });
 
@@ -28,8 +31,32 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.eventName} numberOfLines={1}>{event?.name ?? 'Evento'}</Text>
+        <View style={{ width: 36 }} />
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.eventName}>{event?.name ?? 'Evento'}</Text>
+        <View style={styles.actions}>
+          <ActionButton
+            icon="people"
+            label="Invitados"
+            onPress={() => router.push({ pathname: '/(app)/guests/[eventId]', params: { eventId: id } })}
+          />
+          <ActionButton
+            icon="person-add"
+            label="Agregar invitado"
+            onPress={() => router.push({ pathname: '/(app)/guests/add', params: { eventId: id } })}
+          />
+          <ActionButton
+            icon="qr-code-outline"
+            label="Escanear"
+            onPress={() => router.push({ pathname: '/(app)/scanner/[eventId]', params: { eventId: id } })}
+          />
+        </View>
 
         <Text style={styles.sectionTitle}>ASISTENCIA</Text>
         <View style={styles.row}>
@@ -56,10 +83,44 @@ export default function DashboardScreen() {
   );
 }
 
+function ActionButton({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={actionStyles.btn} onPress={onPress} activeOpacity={0.75}>
+      <Ionicons name={icon as any} size={22} color="#6366F1" />
+      <Text style={actionStyles.label}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const actionStyles = StyleSheet.create({
+  btn: {
+    flex: 1,
+    backgroundColor: '#1E1E2E',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#2A2A3E',
+  },
+  label: { color: '#A0A0B0', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0A0F' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E1E2E',
+  },
+  backBtn: { width: 36 },
+  eventName: { color: '#FFF', fontSize: 17, fontWeight: '700', flex: 1, textAlign: 'center' },
   scroll: { padding: 16 },
-  eventName: { color: '#FFF', fontSize: 22, fontWeight: '800', marginBottom: 20, marginTop: 8 },
+  actions: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   sectionTitle: {
     color: '#4A4A6A',
     fontSize: 11,
@@ -70,3 +131,4 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: 8 },
 });
+

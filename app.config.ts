@@ -3,7 +3,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'FILMAGIC',
+  name: 'Filmagic Pass',
   slug: 'filmagic',
   version: '1.0.0',
   orientation: 'portrait',

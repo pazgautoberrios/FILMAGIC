@@ -27,18 +27,19 @@ const FILTERS: { label: string; value: GuestStatus | 'all' }[] = [
 ];
 
 export default function GuestsScreen() {
-  const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const params = useLocalSearchParams<{ eventId: string }>();
+  const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId;
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<GuestStatus | 'all'>('all');
 
-  const { data: guests, isLoading } = useQuery({
+  const { data: guests = [], isLoading } = useQuery({
     queryKey: ['guests', eventId],
     queryFn: () => listGuests(eventId),
     enabled: !!eventId,
   });
 
-  const filtered = guests?.filter((g) => {
+  const filtered = guests.filter((g) => {
     const matchesSearch =
       search.trim() === '' ||
       `${g.firstName} ${g.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,13 +50,22 @@ export default function GuestsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Invitados</Text>
-        <TouchableOpacity onPress={() => router.push({ pathname: '/(app)/guests/add', params: { eventId } })}>
-          <Ionicons name="person-add" size={24} color="#6366F1" />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.title}>
+          Invitados{guests.length > 0 ? ` (${guests.length})` : ''}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push({ pathname: '/(app)/guests/add', params: { eventId } })}
+        >
+          <Ionicons name="person-add" size={22} color="#6366F1" />
         </TouchableOpacity>
       </View>
 
+      {/* Search */}
       <TextInput
         style={styles.search}
         placeholder="Buscar por nombre o teléfono..."
@@ -64,6 +74,7 @@ export default function GuestsScreen() {
         onChangeText={setSearch}
       />
 
+      {/* Filter chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -82,24 +93,31 @@ export default function GuestsScreen() {
         ))}
       </ScrollView>
 
-      {isLoading ? (
-        <ActivityIndicator color="#6366F1" style={{ marginTop: 32 }} />
-      ) : (
-        <FlatList
-          data={filtered}
-          renderItem={({ item }: { item: Guest }) => (
-            <GuestCard
-              guest={item}
-              onPress={() => router.push(`/(app)/guests/detail/${item.id}`)}
-            />
-          )}
-          keyExtractor={(g) => g.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.empty}>No se encontraron invitados</Text>
-          }
-        />
-      )}
+      {/* List — needs flex:1 wrapper so FlatList gets remaining height */}
+      <View style={styles.listContainer}>
+        {isLoading ? (
+          <ActivityIndicator color="#6366F1" style={{ marginTop: 32 }} />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(g) => g.id}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }: { item: Guest }) => (
+              <GuestCard
+                guest={item}
+                onPress={() => {}}
+              />
+            )}
+            ListEmptyComponent={
+              <Text style={styles.empty}>
+                {guests.length === 0
+                  ? 'No hay invitados aún. Tocá + para agregar.'
+                  : 'No se encontraron invitados con ese filtro.'}
+              </Text>
+            }
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -110,13 +128,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E1E2E',
   },
-  title: { color: '#FFF', fontSize: 22, fontWeight: '800' },
+  backBtn: { width: 32 },
+  title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   search: {
     margin: 16,
-    marginTop: 8,
+    marginBottom: 8,
     backgroundColor: '#1E1E2E',
     borderRadius: 10,
     paddingHorizontal: 16,
@@ -126,7 +147,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2A2A3E',
   },
-  filters: { paddingHorizontal: 16, gap: 8, marginBottom: 8 },
+  filters: { paddingHorizontal: 16, gap: 8, paddingBottom: 10 },
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -138,6 +159,7 @@ const styles = StyleSheet.create({
   filterActive: { backgroundColor: '#6366F1', borderColor: '#6366F1' },
   filterText: { color: '#A0A0B0', fontSize: 13 },
   filterTextActive: { color: '#FFF', fontWeight: '600' },
-  list: { padding: 16, paddingTop: 4 },
-  empty: { color: '#4A4A6A', textAlign: 'center', marginTop: 40, fontSize: 15 },
+  listContainer: { flex: 1 },
+  listContent: { padding: 16, paddingTop: 8, flexGrow: 1 },
+  empty: { color: '#4A4A6A', textAlign: 'center', marginTop: 48, fontSize: 15, lineHeight: 22 },
 });

@@ -27,8 +27,19 @@ export default function LoginScreen() {
     try {
       const user = await signIn(email.trim(), password);
       setUser(user);
-    } catch {
-      Alert.alert('Error', 'Email o contraseña incorrectos');
+    } catch (err: any) {
+      const code = err?.code ?? '';
+      const msg =
+        code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found'
+          ? 'Email o contraseña incorrectos'
+          : code === 'auth/too-many-requests'
+          ? 'Demasiados intentos. Intentá más tarde.'
+          : code === 'auth/network-request-failed'
+          ? 'Sin conexión. Verificá tu red.'
+          : __DEV__
+          ? `Error: ${code || err?.message}`
+          : 'Ocurrió un error. Intentá de nuevo.';
+      Alert.alert('Error de acceso', msg);
     } finally {
       setLoading(false);
     }

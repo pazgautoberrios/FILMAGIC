@@ -51,7 +51,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>FILMAGIC</Text>
+        <Text style={styles.logo}>FILMAGIC PASS</Text>
         <Text style={styles.subtitle}>Sistema de Acceso a Eventos</Text>
 
         <View style={styles.form}>

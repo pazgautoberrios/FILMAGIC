@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -13,6 +13,7 @@ import {
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { listQRsForGuest } from '@/services/firebase/qr';
+import { generateQRCodesLocally } from '@/services/firebase/qr.local';
 import type { Guest, QRCode as QRCodeType } from '@/types';
 
 interface Props {
@@ -24,15 +25,32 @@ interface Props {
 export function QRModal({ guest, visible, onClose }: Props) {
   const [qrs, setQrs] = useState<QRCodeType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    if (!visible) return;
+  const fetchQRs = useCallback(() => {
     setLoading(true);
     listQRsForGuest(guest.id)
       .then((data) => setQrs(data.sort((a, b) => a.qrIndex - b.qrIndex)))
-      .catch(() => Alert.alert('Error', 'No se pudieron cargar los QR'))
+      .catch((err) => Alert.alert('Error', __DEV__ ? String(err) : 'No se pudieron cargar los QR'))
       .finally(() => setLoading(false));
-  }, [visible, guest.id]);
+  }, [guest.id]);
+
+  useEffect(() => {
+    if (!visible) return;
+    fetchQRs();
+  }, [visible, fetchQRs]);
+
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      await generateQRCodesLocally(guest.eventId, guest.id, guest.totalQRs);
+      fetchQRs();
+    } catch (err: any) {
+      Alert.alert('Error', __DEV__ ? (err?.message ?? String(err)) : 'No se pudieron generar los QR');
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   function openWhatsApp() {
     const phone = guest.phone.replace(/\D/g, '');
@@ -78,7 +96,25 @@ export function QRModal({ guest, visible, onClose }: Props) {
         {loading ? (
           <ActivityIndicator color="#6366F1" style={{ marginTop: 40 }} />
         ) : qrs.length === 0 ? (
-          <Text style={styles.empty}>No hay QR generados aún</Text>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="qr-code-outline" size={48} color="#2A2A3E" />
+            <Text style={styles.empty}>No hay QR generados aún</Text>
+            <TouchableOpacity
+              style={styles.generateBtn}
+              onPress={handleGenerate}
+              disabled={generating}
+              activeOpacity={0.8}
+            >
+              {generating ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={18} color="#FFF" />
+                  <Text style={styles.generateBtnText}>Generar {guest.totalQRs} QR</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         ) : (
           <ScrollView contentContainerStyle={styles.qrList}>
             {qrs.map((qr) => (
@@ -143,7 +179,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   usedText: { color: '#FFF', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  empty: { color: '#4A4A6A', textAlign: 'center', marginTop: 48, fontSize: 15 },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 16 },
+  empty: { color: '#4A4A6A', textAlign: 'center', fontSize: 15 },
+  generateBtn: {
+    backgroundColor: '#6366F1',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  generateBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
   footer: { padding: 20, borderTopWidth: 1, borderTopColor: '#1E1E2E' },
   whatsappBtn: {
     backgroundColor: '#25D366',

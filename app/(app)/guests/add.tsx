@@ -61,7 +61,19 @@ export default function AddGuestScreen() {
         status: 'pending',
         notes: notes.trim() || undefined,
       });
-      await generateQRCodesLocally(eventId, guestId, totalQRs);
+
+      try {
+        await generateQRCodesLocally(eventId, guestId, totalQRs);
+      } catch (qrErr: any) {
+        // Guest was saved — navigate back and warn separately so the user
+        // can regenerate QRs from the modal later.
+        console.error('[QR generation]', qrErr);
+        Alert.alert(
+          'Invitado guardado',
+          'El invitado fue creado pero los QR no se pudieron generar. Abrí el card del invitado para regenerarlos.',
+        );
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['guests', eventId] });
       router.back();
     } catch (err: any) {

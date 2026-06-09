@@ -1,11 +1,13 @@
-import { collection, doc, writeBatch, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 
 function makeToken(eventId: string, guestId: string, qrIndex: number): string {
   const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
   const payload = JSON.stringify({ eventId, guestId, qrIndex, nonce });
-  // btoa is available in React Native (Hermes) and produces a stable base64 string
-  return btoa(payload).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return btoa(unescape(encodeURIComponent(payload)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
 }
 
 export async function generateQRCodesLocally(
@@ -27,7 +29,10 @@ export async function generateQRCodesLocally(
     });
   }
 
-  await batch.commit();
+  // Include the status update in the same batch — avoids a second round-trip
+  // that could fail independently and leave QRs created but status stale.
+  const guestRef = doc(db, 'guests', guestId);
+  batch.update(guestRef, { status: 'sent' });
 
-  await updateDoc(doc(db, 'guests', guestId), { status: 'sent' });
+  await batch.commit();
 }

@@ -54,24 +54,13 @@ export function QRModal({ guest, visible, onClose }: Props) {
 
   function openWhatsApp() {
     const phone = guest.phone.replace(/\D/g, '');
-    const name = `${guest.firstName} ${guest.lastName}`;
     const msg = encodeURIComponent(
-      `Hola ${guest.firstName}! 🎬 Tu invitación para *${name}* está lista.\n` +
+      `Hola ${guest.firstName}! 🎬 Tu invitación está lista.\n` +
         `Tenés ${guest.totalQRs} código${guest.totalQRs > 1 ? 's' : ''} QR ` +
         `(1 titular${guest.companions > 0 ? ` + ${guest.companions} acompañante${guest.companions > 1 ? 's' : ''}` : ''}).\n` +
         `Mostrá los QR al ingresar al evento. 🎟️`,
     );
-    const url = `whatsapp://send?phone=${phone}&text=${msg}`;
-    Linking.canOpenURL(url).then((can) => {
-      if (can) {
-        Linking.openURL(url);
-      } else {
-        Alert.alert(
-          'WhatsApp no disponible',
-          'Instalá WhatsApp en el dispositivo para enviar el mensaje.',
-        );
-      }
-    });
+    Linking.openURL(`https://wa.me/${phone}?text=${msg}`);
   }
 
   const labelFor = (index: number) =>

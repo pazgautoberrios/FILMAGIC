@@ -69,7 +69,7 @@ export default function EventsScreen() {
       {isAdmin && (
         <TouchableOpacity
           style={styles.createBtn}
-          onPress={() => router.push('/(app)/admin/events/create')}
+          onPress={() => router.push('/(app)/events/create')}
         >
           <Ionicons name="add-circle" size={20} color="#6366F1" />
           <Text style={styles.createBtnText}>Crear Evento</Text>

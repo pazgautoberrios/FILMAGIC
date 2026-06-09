@@ -51,7 +51,7 @@ export default function GuestsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Invitados</Text>
-        <TouchableOpacity onPress={() => router.push(`/(app)/guests/add?eventId=${eventId}`)}>
+        <TouchableOpacity onPress={() => router.push({ pathname: '/(app)/guests/add', params: { eventId } })}>
           <Ionicons name="person-add" size={24} color="#6366F1" />
         </TouchableOpacity>
       </View>

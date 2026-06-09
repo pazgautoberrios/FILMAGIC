@@ -17,7 +17,8 @@ import { addGuest } from '@/services/firebase/guests';
 import { useCurrentUser } from '@/hooks/useAuth';
 
 export default function AddGuestScreen() {
-  const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const params = useLocalSearchParams<{ eventId: string }>();
+  const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId;
   const router = useRouter();
   const queryClient = useQueryClient();
   const user = useCurrentUser();
@@ -43,6 +44,10 @@ export default function AddGuestScreen() {
       return;
     }
 
+    if (!eventId) {
+      Alert.alert('Error', 'No se recibió el ID del evento. Volvé y reintentá.');
+      return;
+    }
     setLoading(true);
     try {
       await addGuest({

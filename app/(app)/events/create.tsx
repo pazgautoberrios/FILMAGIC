@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { createEvent } from '@/services/firebase/events';
@@ -18,6 +19,7 @@ import { useCurrentUser } from '@/hooks/useAuth';
 
 export default function CreateEventScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useCurrentUser();
 
   const [name, setName] = useState('');
@@ -65,6 +67,7 @@ export default function CreateEventScreen() {
           allowLateEntry: true,
         },
       });
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
       router.back();
     } catch (err: any) {
       Alert.alert('Error', __DEV__ ? err?.message : 'No se pudo crear el evento. Intentá de nuevo.');

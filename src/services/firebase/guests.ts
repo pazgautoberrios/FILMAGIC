@@ -6,7 +6,6 @@ import {
   updateDoc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   Timestamp,
   writeBatch,
@@ -33,9 +32,12 @@ function toGuest(id: string, data: Record<string, unknown>): Guest {
 }
 
 export async function listGuests(eventId: string): Promise<Guest[]> {
-  const q = query(collection(db, COL), where('eventId', '==', eventId), orderBy('lastName'));
+  // orderBy on a different field than where() requires a composite Firestore index.
+  // Sort client-side to avoid that requirement.
+  const q = query(collection(db, COL), where('eventId', '==', eventId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => toGuest(d.id, d.data()));
+  const guests = snap.docs.map((d) => toGuest(d.id, d.data()));
+  return guests.sort((a, b) => a.lastName.localeCompare(b.lastName));
 }
 
 export async function addGuest(data: Omit<Guest, 'id' | 'createdAt' | 'totalQRs'>): Promise<string> {

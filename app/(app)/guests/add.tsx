@@ -57,8 +57,8 @@ export default function AddGuestScreen() {
       });
       await queryClient.invalidateQueries({ queryKey: ['guests', eventId] });
       router.back();
-    } catch {
-      Alert.alert('Error', 'No se pudo agregar el invitado');
+    } catch (err: any) {
+      Alert.alert('Error', __DEV__ ? (err?.message ?? String(err)) : 'No se pudo agregar el invitado');
     } finally {
       setLoading(false);
     }

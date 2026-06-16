@@ -1,15 +1,21 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Ionicons } from '@expo/vector-icons';
 import { ScanResultOverlay } from '@/components/scanner/ScanResult';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { validateQR } from '@/services/firebase/qr';
+import { validateQRLocally } from '@/services/firebase/qr.validate';
+import { useCurrentUser } from '@/hooks/useAuth';
 import type { ScanResult } from '@/types';
 
 export default function ScannerScreen() {
+  const params = useLocalSearchParams<{ eventId: string }>();
+  const eventId = Array.isArray(params.eventId) ? params.eventId[0] : params.eventId;
+  const router = useRouter();
+  const user = useCurrentUser();
   const [permission, requestPermission] = useCameraPermissions();
   const [result, setResult] = useState<ScanResult | null>(null);
   const processing = useRef(false);
@@ -22,19 +28,23 @@ export default function ScannerScreen() {
       processing.current = true;
 
       try {
-        const scanResult = await validateQR(data);
+        const scanResult = await validateQRLocally(data, user?.uid ?? '', eventId);
         setResult(scanResult);
-      } catch {
-        setResult({
-          success: false,
-          status: 'invalid',
-          message: isConnected ? 'Error al validar QR' : 'Sin conexión — modo offline',
-        });
+      } catch (err: any) {
+        if (err?.code === 'ALREADY_USED') {
+          setResult({ success: false, status: 'already_used', message: 'Este QR ya fue utilizado' });
+        } else {
+          setResult({
+            success: false,
+            status: 'invalid',
+            message: isConnected ? 'Error al validar QR' : 'Sin conexión — modo offline',
+          });
+        }
       } finally {
         processing.current = false;
       }
     },
-    [result, isConnected],
+    [result, isConnected, eventId, user],
   );
 
   const handleReset = useCallback(() => {
@@ -62,6 +72,10 @@ export default function ScannerScreen() {
         onBarcodeScanned={result ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
       />
+
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={28} color="#FFF" />
+      </TouchableOpacity>
 
       {!isConnected && (
         <View style={styles.offlineBanner}>
@@ -114,4 +128,15 @@ const styles = StyleSheet.create({
   permissionText: { color: '#FFF', textAlign: 'center', margin: 24, fontSize: 16 },
   permBtn: { backgroundColor: '#6366F1', margin: 24, padding: 16, borderRadius: 12 },
   permBtnText: { color: '#FFF', textAlign: 'center', fontWeight: '600' },
+  backBtn: {
+    position: 'absolute',
+    top: 56,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
